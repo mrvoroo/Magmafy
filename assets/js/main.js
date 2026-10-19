@@ -6,6 +6,60 @@
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function bidi(value) {
+    return esc(value).replace(/(\d[\d.,]*%)/g, '<bdi dir="ltr">$1</bdi>');
+  }
+  function sampleBadge(item) {
+    return item && item.isSample ? '<span class="sample-badge">نموذج توضيحي</span>' : "";
+  }
+
+  /* دراسات الحالة والشهادات من MAGMAFY_CONFIG */
+  (function renderPortfolio() {
+    var casesRoot = $("#cases");
+    if (casesRoot && cfg.cases) {
+      casesRoot.innerHTML = cfg.cases.map(function (c) {
+        var play = c.reel ? '<span class="reel-play"><svg class="icon"><use href="#i-play"/></svg></span>' : "";
+        return '<article class="case" data-cat="' + esc(c.category) + '">' +
+          '<div class="case__visual ' + esc(c.visual) + '" role="img" aria-label="' + esc(c.alt) + '">' +
+            '<div class="post' + (c.reel ? " post--reel" : "") + '">' +
+              '<div class="post__head"><i class="post__av"></i><span>' + esc(c.handle) + '</span><svg class="icon"><use href="#' + esc(c.platform) + '"/></svg></div>' +
+              '<div class="post__art"><b>' + bidi(c.title) + '</b><small>' + bidi(c.line) + '</small><i class="shape s1"></i><i class="shape s2"></i>' + play + '</div>' +
+              '<div class="post__foot"><span><svg class="icon"><use href="#' + esc(c.m1Icon) + '"/></svg> ' + esc(c.m1) + '</span><span><svg class="icon"><use href="#' + esc(c.m2Icon) + '"/></svg> ' + esc(c.m2) + '</span><svg class="icon post__save"><use href="#' + esc(c.saveIcon) + '"/></svg></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="case__body">' +
+            sampleBadge(c) +
+            '<span class="tag">' + esc(c.categoryLabel) + '</span>' +
+            '<h3>' + esc(c.name) + '</h3>' +
+            '<p class="metric"><strong dir="ltr">' + esc(c.metric) + '</strong><span>' + esc(c.metricLabel) + '</span></p>' +
+            '<p>' + esc(c.text) + '</p>' +
+          '</div>' +
+        '</article>';
+      }).join("");
+    }
+
+    var quotesRoot = $(".testimonials");
+    if (quotesRoot && cfg.testimonials) {
+      var star = '<svg class="icon"><use href="#i-star"/></svg>';
+      var stars = '<div class="stars" role="img" aria-label="تقييم 5 من 5">' + star + star + star + star + star + '</div>';
+      quotesRoot.innerHTML = cfg.testimonials.map(function (t) {
+        return '<figure class="card quote' + (t.large ? " quote--lg" : "") + ' reveal">' +
+          sampleBadge(t) +
+          stars +
+          '<blockquote>«' + esc(t.quote) + '»</blockquote>' +
+          '<figcaption><span class="avatar">' + esc(t.initials) + '</span><span><b>' + esc(t.name) + '</b><small>' + esc(t.role) + '</small></span></figcaption>' +
+        '</figure>';
+      }).join("");
+    }
+  })();
+
   /* ---------- روابط واتساب ---------- */
   function waLink(text) {
     var msg = text || cfg.whatsappMessage || "";
@@ -25,7 +79,7 @@
   });
 
   /* ---------- روابط المنصات ---------- */
-  var socialNames = { instagram: "Instagram", tiktok: "TikTok", snapchat: "Snapchat", x: "X", facebook: "Facebook", youtube: "YouTube" };
+  var socialNames = { instagram: "Instagram", tiktok: "TikTok", snapchat: "Snapchat", pinterest: "Pinterest", x: "X", facebook: "Facebook", youtube: "YouTube" };
   var socials = $("#socials");
   if (socials && cfg.social) {
     Object.keys(socialNames).forEach(function (key) {
@@ -182,9 +236,10 @@
       if (d.get("website")) return; // فخ الرسائل الآلية
 
       var ok = true;
-      var name = form.elements.name, biz = form.elements.business, contact = form.elements.contact, goal = form.elements.goal;
+      var name = form.elements.name, biz = form.elements.business, type = form.elements.businessType, contact = form.elements.contact, goal = form.elements.goal;
       fieldError(name, name.value.trim() ? "" : (ok = false, "فضلًا اكتب اسمك"));
       fieldError(biz, biz.value.trim() ? "" : (ok = false, "فضلًا اكتب اسم نشاطك التجاري"));
+      fieldError(type, type.value ? "" : (ok = false, "اختر نوع نشاطك"));
       fieldError(contact, validContact(contact.value.trim()) ? "" : (ok = false, "أدخل رقم جوال صحيحًا أو بريدًا إلكترونيًا صحيحًا"));
       fieldError(goal, goal.value ? "" : (ok = false, "اختر هدفك التسويقي"));
       if (!ok) {
@@ -199,6 +254,7 @@
         "طلب استشارة جديد — " + (cfg.brand || "Magmafy"),
         "الاسم: " + name.value.trim(),
         "النشاط التجاري: " + biz.value.trim(),
+        "نوع النشاط: " + type.value,
         "وسيلة التواصل: " + contact.value.trim(),
         "المنصات الحالية: " + platforms,
         "الهدف: " + goal.value,
@@ -214,7 +270,7 @@
           method: "POST",
           headers: { "Accept": "application/json", "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: name.value.trim(), business: biz.value.trim(), contact: contact.value.trim(),
+            name: name.value.trim(), business: biz.value.trim(), businessType: type.value, contact: contact.value.trim(),
             platforms: platforms, goal: goal.value, message: form.elements.message.value.trim()
           })
         }).then(function (r) {
