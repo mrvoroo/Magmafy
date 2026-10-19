@@ -91,6 +91,7 @@ button { cursor: pointer; }
 .header__inner { display: flex; align-items: center; gap: 24px; height: 100%; }
 .brand { display: inline-flex; align-items: center; gap: 10px; }
 .brand__mark { width: 38px; height: 38px; }
+.brand__logo { height: 40px; width: auto; display: block; }
 .brand__name { font-weight: 700; font-size: 1.35rem; letter-spacing: .2px; direction: ltr; }
 .nav { margin-inline: auto; }
 .nav__list { display: flex; gap: 4px; }
